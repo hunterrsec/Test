@@ -1,1 +1,200 @@
 
+
+
+     TAB 4: COOKIE ANALYZER
+══════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="tab-headers">
+  <div class="section-header">
+    <div class="section-title">HTTP <span class="hl">Header Checker</span></div>
+    <div class="section-desc">Paste response headers or try a CORS-limited fetch to score security posture, caching, CORS, cookies, and information disclosure.</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon">[H]</div><div><div class="stat-num" id="hdr-score-stat">0</div><div class="stat-label">HEADER SCORE</div></div></div>
+    <div class="stat-card"><div class="stat-icon">OK</div><div><div class="stat-num" id="hdr-pass-stat">0</div><div class="stat-label">PASSING CHECKS</div></div></div>
+    <div class="stat-card"><div class="stat-icon">!!</div><div><div class="stat-num" id="hdr-risk-stat">0</div><div class="stat-label">RISKS FOUND</div></div></div>
+  </div>
+  <div class="premium-grid">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-cyan"></span>Response Header Input</div>
+        <div class="input-row">
+          <span class="input-label">URL:</span>
+          <input type="url" id="headerUrl" placeholder="https://example.com (optional, CORS may block reads)">
+          <button class="btn btn-primary" onclick="tryFetchHeaders()">Try Fetch</button>
+        </div>
+        <textarea id="headerInput" rows="13" placeholder="Paste raw HTTP response headers here...&#10;&#10;HTTP/2 200&#10;content-security-policy: default-src 'self'; frame-ancestors 'none'&#10;strict-transport-security: max-age=31536000; includeSubDomains; preload&#10;x-frame-options: DENY&#10;x-content-type-options: nosniff&#10;referrer-policy: no-referrer&#10;permissions-policy: camera=(), microphone=(), geolocation=()"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-green" onclick="analyzeHeaders()">Analyze Headers</button>
+          <button class="btn btn-dim" onclick="loadSampleHeaders()">Load Sample</button>
+          <button class="btn btn-dim" onclick="clearHeaderChecker()">Clear</button>
+          <button class="btn btn-primary" onclick="copyHeaderReport()">Copy Report</button>
+        </div>
+        <div class="alert alert-info">Browser fetch can only read headers exposed by CORS. Paste mode is the reliable mode for full assessments.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot dot-green"></span>Normalized Headers</div>
+        <div class="snippet-box" id="headerNormalized">Run analysis to see normalized headers.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-orange"></span>Security Score</div>
+        <div id="headerScorePanel" class="score-panel">
+          <div class="score-ring" id="headerScoreRing"><b>0</b></div>
+          <div>
+            <div class="deck-title" style="font-size:18px;">Waiting for headers</div>
+            <div class="score-copy">Checks include CSP, HSTS, XFO/frame-ancestors, MIME sniffing, referrer policy, permissions policy, CORS, server leaks, and Set-Cookie flags.</div>
+          </div>
+        </div>
+        <div class="mini-grid" id="headerMiniGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot dot-red"></span>Findings</div>
+        <div class="finding-list" id="headerFindings">
+          <div class="finding info"><strong>No analysis yet</strong>Paste headers and run the checker.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-pane" id="tab-iframe">
+  <div class="section-header">
+    <div class="section-title">Iframe <span class="hl">Checker</span></div>
+    <div class="section-desc">Audit iframe embeds, sandbox posture, permissions, referrer behavior, and clickjacking defenses from HTML plus optional response headers.</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon">IF</div><div><div class="stat-num" id="if-count-stat">0</div><div class="stat-label">IFRAMES FOUND</div></div></div>
+    <div class="stat-card"><div class="stat-icon">SC</div><div><div class="stat-num" id="if-score-stat">0</div><div class="stat-label">IFRAME SCORE</div></div></div>
+    <div class="stat-card"><div class="stat-icon">CJ</div><div><div class="stat-num" id="if-frame-stat">?</div><div class="stat-label">FRAMING POLICY</div></div></div>
+  </div>
+  <div class="premium-grid">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-cyan"></span>Iframe HTML Input</div>
+        <textarea id="iframeInput" rows="10" placeholder="Paste iframe tags or full HTML here...&#10;&#10;<iframe src=&quot;https://example.com/widget&quot; sandbox=&quot;allow-scripts&quot; referrerpolicy=&quot;no-referrer&quot; title=&quot;Example widget&quot; loading=&quot;lazy&quot;></iframe>"></textarea>
+        <div class="card-title" style="margin-top:14px;"><span class="dot dot-orange"></span>Optional Page Headers</div>
+        <textarea id="iframeHeaderInput" rows="5" placeholder="Paste page response headers to check X-Frame-Options and CSP frame-ancestors..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-green" onclick="analyzeIframes()">Analyze Iframes</button>
+          <button class="btn btn-dim" onclick="loadSampleIframe()">Load Sample</button>
+          <button class="btn btn-dim" onclick="clearIframeChecker()">Clear</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot dot-green"></span>Safe Iframe Builder</div>
+        <div class="input-row">
+          <span class="input-label">SRC:</span>
+          <input type="url" id="safeIframeSrc" placeholder="https://example.com/widget">
+        </div>
+        <div class="input-row">
+          <span class="input-label">TITLE:</span>
+          <input type="text" id="safeIframeTitle" placeholder="Descriptive iframe title" value="Embedded content">
+        </div>
+        <div class="input-row">
+          <span class="input-label">SANDBOX:</span>
+          <select id="safeIframeSandbox">
+            <option value="">Strict sandbox (recommended)</option>
+            <option value="allow-scripts">allow-scripts</option>
+            <option value="allow-scripts allow-forms">allow-scripts allow-forms</option>
+            <option value="allow-scripts allow-same-origin">allow-scripts allow-same-origin (trusted only)</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="buildSafeIframe()">Build Snippet</button>
+          <button class="btn btn-green" onclick="previewSafeIframe()">Preview</button>
+          <button class="btn btn-dim" onclick="copyEl('safeIframeSnippet')">Copy Snippet</button>
+        </div>
+        <div class="snippet-box" id="safeIframeSnippet">Configure a safe iframe snippet above.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-orange"></span>Iframe Score</div>
+        <div class="score-panel">
+          <div class="score-ring" id="iframeScoreRing"><b>0</b></div>
+          <div>
+            <div class="deck-title" style="font-size:18px;">Waiting for iframe HTML</div>
+            <div class="score-copy">Checks include sandbox, dangerous src values, permissions, title, lazy loading, referrer policy, srcdoc, and parent anti-framing headers.</div>
+          </div>
+        </div>
+        <div class="mini-grid" id="iframeMiniGrid"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-red"></span>Findings</div>
+        <div class="finding-list" id="iframeFindings">
+          <div class="finding info"><strong>No analysis yet</strong>Paste iframe HTML and run the checker.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot dot-cyan"></span>Sandbox Preview</div>
+        <div class="iframe-preview" id="iframePreview">
+          <span style="color:var(--text-dim);font-size:11px;">Build a snippet, then preview it here.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-pane" id="tab-cookie">
+  <div class="section-header">
+    <div class="section-title">Cookie <span class="hl">Analyzer</span></div>
+    <div class="section-desc">Parse, decode and security-audit HTTP cookies</div>
+  </div>
+  <div class="cookie-grid">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-orange"></span>Cookie String Input</div>
+        <textarea id="cookieInput" rows="5" placeholder="Paste raw cookie header value or Set-Cookie header...&#10;&#10;e.g. session=abc123; HttpOnly; Secure; SameSite=Strict; Path=/; Domain=.example.com; Expires=Wed, 01 Jan 2025 00:00:00 GMT&#10;&#10;Or paste multiple cookies (one per line)"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="parseCookies()">🍪 Analyze Cookies</button>
+          <button class="btn btn-green" onclick="loadSampleCookie()">📋 Load Sample</button>
+          <button class="btn btn-dim" onclick="clearCookies()">🗑 Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="dot dot-cyan"></span>Cookie Decoder</div>
+        <textarea id="cookieDecodeInput" rows="3" placeholder="Paste encoded cookie value (URL-encoded, Base64, JWT...)"></textarea>
+        <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;">
+          <button class="btn btn-dim" onclick="decodeCookieVal('url')">URL Decode</button>
+          <button class="btn btn-dim" onclick="decodeCookieVal('b64')">Base64 Decode</button>
+          <button class="btn btn-dim" onclick="decodeCookieVal('b64url')">Base64URL</button>
+          <button class="btn btn-dim" onclick="decodeCookieVal('hex')">Hex Decode</button>
+          <button class="btn btn-dim" onclick="decodeCookieVal('jwt')">As JWT</button>
+        </div>
+        <div class="output-box" id="cookieDecodeOutput" style="min-height:40px;">
+          <button class="copy-corner" onclick="copyEl('cookieDecodeOutput')">⎘</button>
+          <span style="color:var(--text-dim);">Decoded value appears here...</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span class="dot dot-green"></span>Security Audit</div>
+        <div id="cookieAudit" style="min-height:120px;font-size:11px;color:var(--text-dim);">
+          Paste and analyze cookies to see security flags.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot dot-cyan"></span>Parsed Attributes</div>
+        <div id="cookieParsed" style="min-height:80px;font-size:11px;color:var(--text-dim);">
+          Cookie attributes appear here after analysis.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cookie Security Checklist -->
+  <div class="card" style="margin-top:16px;">
+    <div class="card-title"><span class="dot dot-red"></span>Cookie Security Checklist</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;" id="cookieChecklist">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
